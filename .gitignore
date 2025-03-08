@@ -484,3 +484,5 @@ $RECYCLE.BIN/
 *.swp
 API/appsettings.json
 API/VibeLog.db
+API/VibeLog.db-schema
+.gitignore
