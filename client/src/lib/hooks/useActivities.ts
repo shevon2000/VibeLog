@@ -1,16 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import agent from '../api/agent';
+import { useLocation } from "react-router";
 
-export const useActivities = () => {
+export const useActivities = (id: string) => {
     const queryClient = useQueryClient();
+    const location = useLocation();
 
     const { data: activities, isPending } = useQuery({
         queryKey: ['activities'],
         queryFn: async () => {
             const response = await agent.get<Activity[]>('/activities');
             return response.data;
-        }
+        },
+        enabled: !id && location.pathname === '/activities'
+        //staleTime: 1000 * 60 * 5  - How long something should be considered as marked/fresh (5 min)
     });
+
+    const {data: activity, isLoading: isLoadingActivity} = useQuery({
+        queryKey: ['activities', id],
+        queryFn: async () => {
+            const response = await agent.get<Activity>(`/activities/${id}`);
+            return response.data;
+        },
+        enabled: !!id   // If have an id, enabled flag return true & run the code
+    })
 
     const updateActivity = useMutation({
         mutationFn: async (activity: Activity) => {
@@ -25,7 +38,8 @@ export const useActivities = () => {
 
     const createActivity = useMutation({
         mutationFn: async (activity: Activity) => {
-            await agent.post('/activities', activity)
+            const response = await agent.post('/activities', activity)
+            return response.data;
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries({
@@ -50,6 +64,8 @@ export const useActivities = () => {
         isPending,
         updateActivity,
         createActivity,
-        deleteActivity
+        deleteActivity,
+        activity,
+        isLoadingActivity
     }
 }
